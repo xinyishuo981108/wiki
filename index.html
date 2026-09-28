@@ -12313,9 +12313,22 @@ if (searchInput) {
         history.back();
         setTimeout(function () { pendingBack = false; }, 1200);   // 兜底解锁
       }
+      // 防抖修复：openModal 替换弹窗内容时（如棋手→阵容详情跳转），
+      // class 属性会瞬间“关了又开”。若立刻判定“全部已关闭”会误发
+      // history.back()，popstate 随即 closeAll()，把刚打开的详情弹层关掉
+      // —— 表现为“点击推荐阵容没反应、退回了上一页”。
+      // 这里延迟 180ms 再确认：真是全关了才返回历史，闪断则什么都不做。
+      var popTimer = null;
       function refresh() {
-        if (openOnes().length > 0) syncPush();
-        else syncPop();
+        if (openOnes().length > 0) {
+          if (popTimer) { clearTimeout(popTimer); popTimer = null; }
+          syncPush();
+        } else if (!popTimer) {
+          popTimer = setTimeout(function () {
+            popTimer = null;
+            if (openOnes().length === 0) syncPop();
+          }, 180);
+        }
       }
 
       if (window.MutationObserver) {
