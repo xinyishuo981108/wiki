@@ -12276,6 +12276,12 @@ if (searchInput) {
           it.el.addEventListener('click', function (e) {
             var t = e.target;
             if (!t) return;
+            // 修复：弹窗内链接（如棋手→推荐阵容）的 onclick 会先执行并整体
+            // 替换 #modalContent 内容，事件继续冒泡到这里时，被点的元素已经
+            // 脱离文档（isConnected=false）。若只按 contains 判定会当成点了
+            // 遮罩，把刚打开的新弹窗内容关掉——表现为“点击没反应”。
+            // 脱离文档的点击目标一律按弹窗内部点击处理，不关闭。
+            if (!t.isConnected) return;
             if (it.card && it.card.contains(t)) return;                    // 卡片内不算
             if (t.closest && t.closest('.wzq-close-x')) return;            // 悬浮按钮自己
             if (t.closest && t.closest('.diy-custom-dropdown-list')) return; // 下拉弹层
